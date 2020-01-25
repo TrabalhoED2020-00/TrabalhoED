@@ -2,54 +2,125 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX 10
+
 typedef struct aluno{
 	char nome[50];
 	int matricula;
 	char curso[3];
-	char disciplina[3];
+	char disciplina[4];
 	int faltas;
 	int nota;
 	char mencao[2];
 } Aluno;
 
 Aluno* CriarLista (){
-	Aluno* alunos = (Aluno*)malloc(sizeof(Aluno));
+	Aluno* alunos = (Aluno*)malloc(sizeof(Aluno)*MAX);
 	if (alunos == NULL){
-		printf("Sem memoria disponivel!\n");
+		printf("\nSem memoria disponivel!\n");
 		exit(0);
 	}
 	return alunos;
 }
 
-void ListarDisciplina(FILE* arquivo, Aluno* alunos){
+int Dados (FILE* arquivo, Aluno* alunos){
+	int nlinhas = 0;
+	while(fscanf(arquivo, "%[^;];%d;%[^;];%[^;];%d;%d;%s", alunos[nlinhas].nome, &alunos[nlinhas].matricula, alunos[nlinhas].curso, alunos[nlinhas].disciplina, &alunos[nlinhas].faltas, &alunos[nlinhas].nota, alunos[nlinhas].mencao) != EOF){
+		nlinhas++;
+	}
+	return nlinhas;
+}
+
+void ListarDisciplina(FILE* arquivo, Aluno* alunos, int nlinhas){
+	int cont, j, k, len;
 	rewind(arquivo);
-	printf("Disciplina   Aluno\n");
-	while(fscanf(arquivo, "%[^;];%d;%[^;];%[^;];%d;%d;%s", alunos->nome, &alunos->matricula, alunos->curso, alunos->disciplina, &alunos->faltas, &alunos->nota, alunos->mencao) != EOF){
-		printf("%s       \n", alunos->disciplina);
+	printf("\nDisciplina   Aluno\n");
+	
+	for (j = 0; j < nlinhas; j++){
+		cont = 0;
+		for (k = 0; k < nlinhas; k++){
+			if (strcmp(alunos[j].disciplina, alunos[k].disciplina) == 0){
+				cont++;
+			}
+		}
+		len = strlen(alunos[j].disciplina);
+		if (len == 1){
+			printf("%s            %d\n", alunos[j].disciplina, cont);
+		}
+		if (len == 2){
+			printf("%s           %d\n", alunos[j].disciplina, cont);
+		}
+		if (len == 3){
+			printf("%s          %d\n", alunos[j].disciplina, cont);
+		}
 	}
 }
 
-void AdicionarDisciplina (FILE *arquivo, Aluno *alunos){
-	char sigla[3];
-	printf("Adicionar disciplina\nDigite a sigla: ");
+void AdicionarDisciplina (FILE *arquivo, Aluno *alunos, int nlinhas){
+	char sigla[4];
+	int j;
+	printf("\nAdicionar disciplina\nDigite a sigla: ");
 	scanf("%s", sigla);
 	rewind(arquivo);
-	while(fscanf(arquivo, "%[^;];%d;%[^;];%[^;];%d;%d;%s", alunos->nome, &alunos->matricula, alunos->curso, alunos->disciplina, &alunos->faltas, &alunos->nota, alunos->mencao) != EOF){
-		if (strcmp(alunos->disciplina, sigla) == 0){
+	for (j = 0; j < nlinhas; j++){
+		if (strcmp(alunos[j].disciplina, sigla) == 0){
 			printf("Disciplina ja existe!\n");
 			return;
 		}
 	}
 }
 
+void RemoverDisciplina (FILE *arquivo, Aluno *alunos, int nlinhas){
+	char sigla[4];
+	int j, cont = 0;
+	printf("\nRemover disciplina\nDigite a sigla: ");
+	scanf("%s", sigla);
+	rewind(arquivo);
+	for (j = 0; j < nlinhas; j++){
+		if (strcmp(alunos[j].disciplina, sigla) == 0){
+			strcpy(alunos[j].disciplina, "0");
+			cont++;
+		}
+	}
+	if (cont == 0){
+		printf("Disciplina nao cadastrada!\n");
+	}
+}
+
+void SemDisciplina (FILE *arquivo, Aluno *alunos, int nlinhas){
+	int i;
+	printf("Nome       Matricula      Curos\n");
+	for (i = 0; i < nlinhas; i++){
+		if (strcmp(alunos[i].disciplina,"0") == 0){
+			printf("%s      %d       %s\n", alunos[i].nome, alunos[i].matricula, alunos[i].curso);
+		}
+	}
+}
+
+void AdicionarAluno (FILE *arquivo, Aluno *alunos, int nlinhas){
+	char nome[50], curso[4];
+	int matricula;
+	printf("Adicionar aluno\n");
+	printf("Nome:");
+	scanf("%s", nome);
+	printf("Matricula: ");
+	scanf("%d", &matricula);
+	printf("Curso: ");
+	scanf("%s", curso);
+	strcpy(alunos[nlinhas+1].nome, nome);	
+	alunos[nlinhas+1].matricula = matricula;
+	strcpy(alunos[nlinhas+1].curso, curso);
+}
+
 int main(){
-	int opcao;
+	int opcao, nlinhas;
 	FILE* arqNome;
 	Aluno* alunos = CriarLista();
 	if ((arqNome = fopen("alunos.txt","at+")) == NULL){
-		printf("Nao foi possivel abrir o arquivo.\n");
+		printf("\nNao foi possivel abrir o arquivo.\n");
 		return 0;
 	}
+	nlinhas = Dados(arqNome, alunos);
 	while(1){
 		printf("Ola professor,\nX alunos nao estao matriculados.\nO que deseja fazer:\n");
 		printf("1 Listar disciplinas\n");
@@ -65,10 +136,19 @@ int main(){
 		printf("Digite a opcao: ");
 		scanf("%d", &opcao);
 		if (opcao == 1){
-			ListarDisciplina(arqNome, alunos);
+			ListarDisciplina(arqNome, alunos, nlinhas);
 		}
 		if (opcao == 2){
-			AdicionarDisciplina(arqNome, alunos);
+			AdicionarDisciplina(arqNome, alunos, nlinhas);
+		}
+		if (opcao == 3){
+			RemoverDisciplina(arqNome, alunos, nlinhas);
+		}
+		if (opcao == 4){
+			SemDisciplina(arqNome, alunos, nlinhas);
+		}
+		if (opcao == 5){
+			AdicionarAluno(arqNome, alunos, nlinhas);
 		}
 		if (opcao == 10){
 			fclose(arqNome);

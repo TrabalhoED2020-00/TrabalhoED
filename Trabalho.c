@@ -1,33 +1,52 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-typedef struct _disciplina{
+typedef struct aluno{
+	char nome[50];
+	int matricula;
+	char curso[3];
 	char disciplina[3];
-	int N_alunos;
-} Disciplina;
+	int faltas;
+	int nota;
+	char mencao[2];
+} Aluno;
 
-Disciplina* CriarLista (){
-	Disciplina* disciplinas = (Disciplina*)malloc(sizeof(Disciplina));
-	if (disciplinas == NULL){
+Aluno* CriarLista (){
+	Aluno* alunos = (Aluno*)malloc(sizeof(Aluno));
+	if (alunos == NULL){
 		printf("Sem memoria disponivel!\n");
 		exit(0);
 	}
-	return disciplinas;
+	return alunos;
 }
 
-void ListarDisciplina(FILE *arquivo, Disciplina *disciplinas){
+void ListarDisciplina(FILE* arquivo, Aluno* alunos){
 	rewind(arquivo);
 	printf("Disciplina   Aluno\n");
-	while(fscanf(arquivo, "%s %d", disciplinas->disciplina, &disciplinas->N_alunos) != EOF){
-		printf("%s           %d\n", disciplinas->disciplina, disciplinas->N_alunos);
+	while(fscanf(arquivo, "%[^;];%d;%[^;];%[^;];%d;%d;%s", alunos->nome, &alunos->matricula, alunos->curso, alunos->disciplina, &alunos->faltas, &alunos->nota, alunos->mencao) != EOF){
+		printf("%s       \n", alunos->disciplina);
+	}
+}
+
+void AdicionarDisciplina (FILE *arquivo, Aluno *alunos){
+	char sigla[3];
+	printf("Adicionar disciplina\nDigite a sigla: ");
+	scanf("%s", sigla);
+	rewind(arquivo);
+	while(fscanf(arquivo, "%[^;];%d;%[^;];%[^;];%d;%d;%s", alunos->nome, &alunos->matricula, alunos->curso, alunos->disciplina, &alunos->faltas, &alunos->nota, alunos->mencao) != EOF){
+		if (strcmp(alunos->disciplina, sigla) == 0){
+			printf("Disciplina ja existe!\n");
+			return;
+		}
 	}
 }
 
 int main(){
 	int opcao;
-	FILE *arqNome;
-	Disciplina *disciplinas = CriarLista();
-	if ((arqNome = fopen("Nome.txt","at+")) == NULL){
+	FILE* arqNome;
+	Aluno* alunos = CriarLista();
+	if ((arqNome = fopen("alunos.txt","at+")) == NULL){
 		printf("Nao foi possivel abrir o arquivo.\n");
 		return 0;
 	}
@@ -46,7 +65,10 @@ int main(){
 		printf("Digite a opcao: ");
 		scanf("%d", &opcao);
 		if (opcao == 1){
-			ListarDisciplina(arqNome, disciplinas);
+			ListarDisciplina(arqNome, alunos);
+		}
+		if (opcao == 2){
+			AdicionarDisciplina(arqNome, alunos);
 		}
 		if (opcao == 10){
 			fclose(arqNome);

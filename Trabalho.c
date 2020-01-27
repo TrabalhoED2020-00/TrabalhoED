@@ -225,12 +225,20 @@ void RemoverDisciplina (lista* LISTA, listamat *LISTAMAT){
 }
 
 void SemDisciplina (lista* LISTA){
-	int i;
+	int i, len, espaco;
 	Aluno *atual = LISTA->inicio;
-	printf("\nNome       Matricula      Curso\n");
+	printf("\nNome                                               Matricula      Curso\n");
 	for (i = 0; i < LISTA->tam; i++){
 		if (strcmp(atual->disciplina,"N/D") == 0){
-			printf("%s      %d       %s", atual->nome, atual->matricula, atual->curso);
+			len = strlen(atual->nome);
+			espaco = 52 - len;
+			printf("%s", atual->nome);
+			while (espaco){
+				printf(" ");
+				espaco--;
+			}
+			printf("%d       %s", atual->matricula, atual->curso);
+			
 		}
 		atual = atual->prox;
 	}
@@ -338,6 +346,50 @@ void Salvar (FILE* arquivo, lista* LISTA){
 	}
 }
 
+void Opcoes (lista* LISTA, listamat* LISTAMAT, int nalunos, char disciplina[]){
+	int opcao;
+	while(1){
+		system("cls || clear");
+		printf("Gerenciar disciplina: %s", disciplina);
+		printf("\nQuantidade de alunos: %d", nalunos);
+		printf("\nOpcoes:\n");
+		printf("1 Listar alunos\n");
+		printf("2 Remover aluno da disciplina\n");
+		printf("3 Atribuir nota a aluno\n");
+		printf("4 Atribuir faltas a aluno\n");
+		printf("5 Processar turma\n");
+		printf("6 Voltar\n");
+		scanf("%d", &opcao);
+		switch(opcao){
+			case 1: break;
+			case 2: break;
+			case 3: break;
+			case 4: break;
+			case 5: break;
+			case 6: return;
+			default: printf("\nComando invalido!\n");
+		}
+	}
+}
+
+void Gerenciar (lista* LISTA, listamat* LISTAMAT){
+	char sigla[4];
+	Materia* atualmat = LISTAMAT->inicio;
+	printf("Gerenciar disciplina: ");
+	scanf("%s", sigla);
+	while(atualmat != NULL){
+		if (strcmp(atualmat->disciplina, sigla) == 0){
+			break;
+		}
+		atualmat = atualmat->prox;
+	}
+	if (atualmat == NULL){
+		printf("Disciplina nao encontrada!\n");
+		return;
+	}
+	Opcoes (LISTA, LISTAMAT, atualmat->nalunos, atualmat->disciplina);
+}
+
 int main(){
 	int opcao;
 	FILE* arqNome;
@@ -371,7 +423,7 @@ int main(){
 				case 5: AdicionarAluno(LISTA); break;
 				case 6: RemoverAluno(LISTA); break;
 				case 7: IncluirAluno(LISTA, LISTAMAT); break;
-				case 8: break;
+				case 8: Gerenciar (LISTA, LISTAMAT);break;
 				case 9: Salvar(arqNome, LISTA); break;
 				case 10: fclose(arqNome); exit(0); break;
 				case 11: imprime(LISTA); break;

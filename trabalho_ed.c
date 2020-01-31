@@ -3,13 +3,13 @@
 #include <string.h>
 
 typedef struct aluno{
-	char nome[51];
 	int matricula;
-	char curso[3];
-	char disciplina[4];
 	float faltas;
 	float nota;
+	char nome[51];
+	char curso[3];
 	char mencao[3];
+	char disciplina[4];
 	struct aluno *prox;
 	struct aluno *ant;
 }Aluno;
@@ -441,34 +441,26 @@ void Opcoes (lista* LISTA, listamat* LISTAMAT, int nalunos, char disciplina[]){
 }
 
 void listar_alunos(char sigla[], lista* LISTA){
-	  if (LISTA->inicio == NULL) {
-	    printf("Lista vazia!\n");
+	if(LISTA->inicio == NULL){
+		printf("Lista vazia!\n");
 	    return;
-	  }
-	Aluno* anterior = NULL;
+	}
 	Aluno* atual = LISTA->inicio->prox; 
-  
   	while (atual != NULL) {
 	    Aluno* aux = LISTA->inicio;
-	    Aluno* aux_ant = NULL;
-	    while (aux->nota < atual->nota && aux != atual && sigla == aux->disciplina && atual->disciplina == sigla) {
-	      aux_ant = aux;
-	      aux = aux->prox;
+	    Aluno* aux2;
+	    while (aux->nota > atual->nota && aux != atual) {
+	    	aux = aux->prox;
 	    }
-	    
-	    if(anterior != NULL && aux != atual && sigla==aux->disciplina && sigla == aux->disciplina && atual->disciplina == sigla){
-	      anterior->prox = atual->prox;
-	      if (aux_ant == NULL) {
-	        LISTA->inicio = atual;
-	      } else {
-	      	aux_ant->prox = atual;
-	     }
-	      atual->prox = aux;
+	    if (atual != aux){
+	    	aux2 = atual->ant;
+	    	atual->ant = aux->ant;
+	    	aux->prox = atual->prox;
+	    	atual->prox = aux;
+	    	aux->ant = aux2;
+	    }
+	    atual= atual->prox;
     }
-
-    anterior = atual;
-    atual = atual->prox;
-  }
 	/*int i;
 	float aux1, aux2;
 	Aluno *atual = LISTA->inicio;
@@ -487,6 +479,7 @@ void listar_alunos(char sigla[], lista* LISTA){
 	getchar();
 }
 
+
 void atribuir_nota(char sigla[], lista* LISTA, listamat* LISTAMAT){
 	int mat, cont;
 	float Nota;
@@ -494,15 +487,14 @@ void atribuir_nota(char sigla[], lista* LISTA, listamat* LISTAMAT){
 	printf("Atribuir nota a aluno de %s\n", sigla);
 	printf("Matricula: ");
 	scanf("%d", &mat);
-	//Verifica matricula
 	for(cont = 1; cont<LISTA->tam; cont++){
-		if(mat==atual->matricula){
+		if(mat==atual->matricula){			
 			printf("Nota: ");
 			scanf("%f", &Nota);
-			atual->nota = Nota;
+			atual->nota = Nota;				
 			return;
 		}
-		atual = atual->prox;
+		atual = atual->prox;			
 	}
 	printf("Matricula nao encontrada\n");
 	printf("Pressione enter para voltar");
@@ -571,13 +563,6 @@ void remover_aluno_da_disciplina(listamat* LISTAMAT, lista* LISTA, char sigla[])
 	fflush(stdin);
 	getchar();
 }
-
-/*void processar_turma(lista* LISTA, listamat* LISTAMAT){
-	int i;
-	for(i=1; i<LISTAMAT->tam; i++){
-
-	}
-}*/
 
 void Gerenciar (lista* LISTA, listamat* LISTAMAT){
 	char sigla[4];

@@ -256,29 +256,35 @@ void RemoverDisciplina(lista* LISTA, listamat *LISTAMAT){
 	int i, cont = 0;
 	Aluno *atual = LISTA->inicio;
 	Materia *atual2 = LISTAMAT->inicio;
+	//Materia *aux;
 	printf("\nRemover disciplina\nDigite a sigla: ");
 	scanf("%s", sigla);
-	while (atual2 != NULL){
+	while(atual2 != NULL){
 		if(strcmp(atual2->disciplina, sigla) == 0){
-		cont++;
-		if(atual2 == LISTAMAT->inicio){
-				LISTAMAT->inicio = LISTAMAT->inicio->prox;
-				LISTAMAT->inicio->ant = NULL;
+			cont++;
+			if(atual2 == LISTAMAT->inicio){
+					LISTAMAT->inicio = LISTAMAT->inicio->prox;
+					LISTAMAT->inicio->ant = NULL;
+				}
+				else{
+					if(atual2 == LISTAMAT->fim){
+
+						LISTAMAT->fim = LISTAMAT->fim->ant;
+						LISTAMAT->fim->prox = NULL;
+
+					}
+				else{
+					atual2->ant->prox = atual2->prox;
+					atual2->prox->ant = atual2->ant;
+				}
 			}
-			else{
-			if(atual2 == LISTAMAT->fim){
-				LISTAMAT->fim = LISTAMAT->fim->ant;
-				LISTAMAT->fim->prox = NULL;
-			}
-			else{
-				atual2->ant->prox = atual2->prox;
-				atual2->prox->ant = atual2->ant;
-			}
-			}
-			free(atual2);
 			LISTAMAT->tam--;
 		}
+		//aux = atual2;
 		atual2 = atual2->prox;
+		/*if (cont > 0){
+			free(aux);
+		}*/
 	}
 	if(cont == 0){
 		printf("Disciplina nao cadastrada!\n");
@@ -594,10 +600,10 @@ void Gerenciar (lista* LISTA, listamat* LISTAMAT){
 	printf("Gerenciar disciplina: ");
 	scanf("%s", sigla);
 	while(atualmat != NULL){
-	if(strcmp(atualmat->disciplina, sigla) == 0){
-		break;
+		if(strcmp(atualmat->disciplina, sigla) == 0){
+			break;
 		}
-	atualmat = atualmat->prox;
+		atualmat = atualmat->prox;
 	}	
 	if(atualmat == NULL){
 		printf("Disciplina nao encontrada!\n");

@@ -3,13 +3,13 @@
 #include <string.h>
 
 typedef struct aluno{
+	char nome[51];
 	int matricula;
+	char curso[3];
+	char disciplina[4];
 	float faltas;
 	float nota;
-	char nome[51];
-	char curso[3];
 	char mencao[3];
-	char disciplina[4];
 	struct aluno *prox;
 	struct aluno *ant;
 }Aluno;
@@ -300,13 +300,13 @@ void SemDisciplina(lista* LISTA){
 	for(i = 0; i < LISTA->tam; i++){
 		if(strcmp(atual->disciplina,"N/D") == 0){
 			len = strlen(atual->nome);
-			espaco = 52 - len;
+			espaco = 51 - len;
 			printf("%s", atual->nome);
 			while (espaco){
 				printf(" ");
 				espaco--;
 			}
-			printf("%d       %s", atual->matricula, atual->curso);
+			printf("%d       %s\n", atual->matricula, atual->curso);
 		}
 		atual = atual->prox;
 	}
@@ -441,44 +441,60 @@ void Opcoes (lista* LISTA, listamat* LISTAMAT, int nalunos, char disciplina[]){
 }
 
 void listar_alunos(char sigla[], lista* LISTA){
-	if(LISTA->inicio == NULL){
+	int len, espaco;
+	if (LISTA->inicio == NULL) {
 		printf("Lista vazia!\n");
-	    return;
+		return;
 	}
+	Aluno* anterior = NULL;
 	Aluno* atual = LISTA->inicio->prox; 
+  
   	while (atual != NULL) {
-	    Aluno* aux = LISTA->inicio;
-	    Aluno* aux2;
-	    while (aux->nota > atual->nota && aux != atual) {
-	    	aux = aux->prox;
-	    }
-	    if (atual != aux){
-	    	aux2 = atual->ant;
-	    	atual->ant = aux->ant;
-	    	aux->prox = atual->prox;
-	    	atual->prox = aux;
-	    	aux->ant = aux2;
-	    }
-	    atual= atual->prox;
-    }
-	/*int i;
-	float aux1, aux2;
-	Aluno *atual = LISTA->inicio;
-	for(i=1; i<=LISTA->tam;i++){
-		aux1 = atual->prox->nota;
-		aux2 = atual->nota;
-		while(aux1<atual->nota){
-			atual->nota = aux1;
-			atual = LISTA->inicio->prox;
+		Aluno* aux = LISTA->inicio;
+		Aluno* aux_ant = NULL;
+		while (aux->nota > atual->nota && aux != atual) {
+		  aux_ant = aux;
+		  aux = aux->prox;
 		}
-	atual->nota=aux2;
-	}*/
-	imprime(LISTA);
+		
+		if(anterior != NULL && aux != atual && strcmp(aux->disciplina, sigla) == 0 && strcmp(atual->disciplina, sigla) == 0){
+			anterior->prox = atual->prox;
+			if (aux_ant == NULL) {
+				LISTA->inicio = atual;
+			}
+			else {
+				aux_ant->prox = atual;
+			}
+			atual->prox = aux;
+		}
+	anterior = atual;
+	atual = atual->prox;
+	}
+	
+	atual = LISTA->inicio;
+	printf("Matricula   Nome                                              Faltas  Nota    Mencao\n");
+	while(atual != NULL){
+		if(strcmp(atual->disciplina, sigla) == 0){
+			len = strlen(atual->nome);
+			espaco = 50 - len;
+			printf("%d    %s", atual->matricula, atual->nome);
+			while (espaco){
+				printf(" ");
+				espaco--;
+			}
+			if(atual->nota == 10){
+				printf("%.2f    %.2f   %s\n", atual->faltas, atual->nota, atual->mencao);
+			}
+			else{
+				printf("%.2f    %.2f    %s\n", atual->faltas, atual->nota, atual->mencao);
+			}
+		}
+		atual = atual->prox;
+	}
 	printf("Pressione enter para voltar");
 	fflush(stdin);
 	getchar();
 }
-
 
 void atribuir_nota(char sigla[], lista* LISTA, listamat* LISTAMAT){
 	int mat, cont;
@@ -487,14 +503,15 @@ void atribuir_nota(char sigla[], lista* LISTA, listamat* LISTAMAT){
 	printf("Atribuir nota a aluno de %s\n", sigla);
 	printf("Matricula: ");
 	scanf("%d", &mat);
+	//Verifica matricula
 	for(cont = 1; cont<LISTA->tam; cont++){
-		if(mat==atual->matricula){			
+		if(mat==atual->matricula){
 			printf("Nota: ");
 			scanf("%f", &Nota);
-			atual->nota = Nota;				
+			atual->nota = Nota;
 			return;
 		}
-		atual = atual->prox;			
+		atual = atual->prox;
 	}
 	printf("Matricula nao encontrada\n");
 	printf("Pressione enter para voltar");
@@ -563,6 +580,13 @@ void remover_aluno_da_disciplina(listamat* LISTAMAT, lista* LISTA, char sigla[])
 	fflush(stdin);
 	getchar();
 }
+
+/*void processar_turma(lista* LISTA, listamat* LISTAMAT){
+	int i;
+	for(i=1; i<LISTAMAT->tam; i++){
+
+	}
+}*/
 
 void Gerenciar (lista* LISTA, listamat* LISTAMAT){
 	char sigla[4];

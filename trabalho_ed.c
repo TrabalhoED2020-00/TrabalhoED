@@ -15,7 +15,6 @@ typedef struct aluno{
 }Aluno;
 
 typedef struct Lista{
-	int tam;
 	Aluno *inicio;
 	Aluno *fim;
 }lista;
@@ -28,7 +27,6 @@ typedef struct materia{
 }Materia;
 
 typedef struct ListaMat{
-	int tam;
 	Materia *inicio;
 	Materia *fim;
 }listamat;
@@ -42,7 +40,7 @@ void imprime(lista *lista);
 void ListarDisciplina(listamat* LISTAMAT);
 void AdicionarDisciplina (listamat* LISTAMAT);
 void RemoverDisciplina (lista* LISTA, listamat *LISTAMAT);
-void SemDisciplina (lista* LISTA);
+void listar_alunos_sem_disciplina (lista* LISTA);
 void AdicionarAluno (lista* LISTA);
 void RemoverAluno (lista* LISTA);
 void IncluirAluno (lista* LISTA, listamat* LISTAMAT);
@@ -52,22 +50,23 @@ void Gerenciar (lista* LISTA, listamat* LISTAMAT);
 void listar_alunos(char disciplina[],lista* LISTA);
 void atribuir_nota(char sigla[], lista* LISTA, listamat* LISTAMAT);
 void atribuir_faltas(char sigla[], lista* LISTA, listamat* LISTAMAT);
-void remover_aluno_da_disciplina(listamat* LISTAMAT, lista* LISTA, char sigla[]);
-int opcoes_gerenciamento();
+int remover_aluno_da_disciplina(listamat* LISTAMAT, lista* LISTA, char sigla[]);
+int semDisciplina(lista* LISTA);
 
 int main(){
-	int opcao;
+	int opcao, cont;
 	FILE* arqNome;
 	lista* LISTA = CriarLista();
 	listamat* LISTAMAT = CriarListaMat();
-	if((arqNome = fopen("alunos.txt","at+")) == NULL){
+	if((arqNome = fopen("alunos.txt","rt")) == NULL){
 		printf("\nNao foi possivel abrir o arquivo.\n");
 		return 0;
 	}
 	dados(arqNome, LISTA, LISTAMAT);
+	cont = semDisciplina(LISTA);
 	while(1){
 		system("cls || clear");
-		printf("Ola professor,\nX aluno(s) nao estao matriculados.\nO que deseja fazer:\n");
+		printf("Ola professor,\n%d aluno(s) nao estao matriculados.\nO que deseja fazer:\n", cont);
 		printf("1 Listar disciplinas\n");
 		printf("2 Adicionar disciplina\n");
 		printf("3 Remover disciplina\n");
@@ -84,13 +83,13 @@ int main(){
 			case 1: ListarDisciplina(LISTAMAT); break;
 			case 2: AdicionarDisciplina(LISTAMAT); break;
 			case 3: RemoverDisciplina(LISTA, LISTAMAT); break;
-			case 4: SemDisciplina(LISTA); break;
+			case 4: listar_alunos_sem_disciplina(LISTA); break;
 			case 5: AdicionarAluno(LISTA); break;
 			case 6: RemoverAluno(LISTA); break;
 			case 7: IncluirAluno(LISTA, LISTAMAT); break;
 			case 8: Gerenciar (LISTA, LISTAMAT);break;
 			case 9: Salvar(arqNome, LISTA); break;
-			case 10: fclose(arqNome); exit(0); break;
+			case 10: exit(0);
 			case 11: imprime(LISTA); break;
 			default: printf("\nComando invalido!\n");
 		}
@@ -101,6 +100,17 @@ int main(){
 	return 0;
 }
 
+int semDisciplina(lista* LISTA){
+	int cont = 0;					//Conta quantos alunos estão sem disciplina;
+	Aluno* atual = LISTA->inicio;
+	while (atual != NULL){
+		if (strcmp(atual->disciplina, "N/D") == 0){
+			cont++;
+		}
+		atual = atual->prox;
+	}
+	return cont;
+}
 
 lista* CriarLista(){
 	lista* LISTA = (lista*)malloc(sizeof(lista));
@@ -110,7 +120,6 @@ lista* CriarLista(){
 	}
 	LISTA->inicio = NULL;
 	LISTA->fim = NULL;
-	LISTA->tam = 0;
 	return LISTA;
 }
 
@@ -122,7 +131,6 @@ listamat* CriarListaMat(){
 	}
 	LISTAMAT->inicio = NULL;
 	LISTAMAT->fim = NULL;
-	LISTAMAT->tam = 0;
 	return LISTAMAT;
 }
 
@@ -159,7 +167,6 @@ void insereMaterias(listamat* LISTAMAT, char nome[], char disciplina[]){
 				LISTAMAT->inicio = novo;
 				LISTAMAT->fim = novo;
 			}
-			LISTAMAT->tam++;
 		}
 		else{
 			free(novo);
@@ -190,7 +197,6 @@ void insereFim(lista* LISTA, char nome[], int matricula, char curso[], char disc
 			LISTA->fim = novo;
 		}
 	}
-	LISTA->tam++;
 }
 
 void dados(FILE* arquivo, lista* LISTA, listamat* LISTAMAT){
@@ -203,6 +209,7 @@ void dados(FILE* arquivo, lista* LISTA, listamat* LISTAMAT){
 		insereFim(LISTA, nome, matricula, curso, disciplina, faltas, nota, mencao);
 		insereMaterias(LISTAMAT, nome, disciplina);
 	}
+	fclose(arquivo);
 }
 
 void imprime(lista *lista){
@@ -237,11 +244,10 @@ void ListarDisciplina(listamat* LISTAMAT){
 void AdicionarDisciplina(listamat* LISTAMAT){
 	Materia *atual;
 	char sigla[4];
-	int i;
 	atual = LISTAMAT->inicio;
 	printf("\nAdicionar disciplina\nDigite a sigla: ");
 	scanf("%s", sigla);
-	for(i = 0; i < LISTAMAT->tam; i++){
+	while(atual != NULL){
 		if(strcmp(atual->disciplina, sigla) == 0){
 			printf("Disciplina ja existe!\n");
 			return;
@@ -253,15 +259,17 @@ void AdicionarDisciplina(listamat* LISTAMAT){
 
 void RemoverDisciplina(lista* LISTA, listamat *LISTAMAT){
 	char sigla[4];
-	int i, cont = 0;
+	int cont = 0, libera;
 	Aluno *atual = LISTA->inicio;
 	Materia *atual2 = LISTAMAT->inicio;
-	//Materia *aux;
+	Materia *aux;
 	printf("\nRemover disciplina\nDigite a sigla: ");
 	scanf("%s", sigla);
 	while(atual2 != NULL){
+		libera = 0;
 		if(strcmp(atual2->disciplina, sigla) == 0){
 			cont++;
+			libera++;
 			if(atual2 == LISTAMAT->inicio){
 					LISTAMAT->inicio = LISTAMAT->inicio->prox;
 					LISTAMAT->inicio->ant = NULL;
@@ -278,19 +286,18 @@ void RemoverDisciplina(lista* LISTA, listamat *LISTAMAT){
 					atual2->prox->ant = atual2->ant;
 				}
 			}
-			LISTAMAT->tam--;
 		}
-		//aux = atual2;
+		aux = atual2;
 		atual2 = atual2->prox;
-		/*if (cont > 0){
+		if (libera > 0){
 			free(aux);
-		}*/
+		}
 	}
 	if(cont == 0){
 		printf("Disciplina nao cadastrada!\n");
 	}
 	else{
-		for(i = 0; i < LISTA->tam; i++){
+		while(atual != NULL){
 			if(strcmp(atual->disciplina, sigla) == 0){
 				strcpy(atual->disciplina, "N/D");
 			}
@@ -299,11 +306,11 @@ void RemoverDisciplina(lista* LISTA, listamat *LISTAMAT){
 	}
 }
 
-void SemDisciplina(lista* LISTA){
-	int i, len, espaco;
+void listar_alunos_sem_disciplina(lista* LISTA){
+	int len, espaco;
 	Aluno *atual = LISTA->inicio;
 	printf("\nNome                                               Matricula      Curso\n");
-	for(i = 0; i < LISTA->tam; i++){
+	while(atual != NULL){
 		if(strcmp(atual->disciplina,"N/D") == 0){
 			len = strlen(atual->nome);
 			espaco = 51 - len;
@@ -333,11 +340,11 @@ void AdicionarAluno (lista* LISTA){
 }
 
 void RemoverAluno (lista* LISTA){
-	int matricula, i, cont = 0, existe = 0;
+	int matricula, cont = 0, existe = 0;
 	Aluno *atual = LISTA->inicio;
 	printf("\nRemover aluno\nMatricula: ");
 	scanf("%d", &matricula);
-	for(i = 0; i < LISTA->tam; i++){
+	while(atual != NULL){
 		if(matricula == atual->matricula){
 			existe++;
 			if(strcmp(atual->disciplina, "N/D") != 0){
@@ -366,7 +373,6 @@ void RemoverAluno (lista* LISTA){
 					}
 				}
 				free(atual);
-				LISTA->tam--;
 			}
 			atual = atual->prox;
 		}
@@ -388,7 +394,7 @@ void IncluirAluno(lista* LISTA, listamat* LISTAMAT){
 	while(atualmat != NULL){
 		if (strcmp(atualmat->disciplina, disciplina) == 0){
 			existemat++;
-		break;
+			break;
 		}
 		atualmat = atualmat->prox;
 	}
@@ -401,6 +407,14 @@ void IncluirAluno(lista* LISTA, listamat* LISTAMAT){
 	}
 	if (existemat != 0 && existeal != 0){
 		atualmat->nalunos++;
+		atualal = LISTA->inicio;
+		while (atualal != NULL){
+			if (atualal->matricula == matricula && strcmp(atualal->disciplina, "N/D") == 0){
+				strcpy(atualal->disciplina, disciplina);
+				break;
+			}
+			atualal = atualal->prox;
+		}
 	}
 	else{
 		if (existemat == 0){
@@ -414,15 +428,46 @@ void IncluirAluno(lista* LISTA, listamat* LISTAMAT){
 
 void Salvar(FILE* arquivo, lista* LISTA){
 	Aluno* atual = LISTA->inicio;
+	if((arquivo = fopen("alunos.txt","wt")) == NULL){
+		printf("\nNao foi possivel abrir o arquivo.\n");
+		return;
+	}
 	while(atual != NULL){
-		fprintf(arquivo,"%s;%d;%s;%s;%.2f;%.2f;%s", atual->nome, atual->matricula, atual->curso, atual->disciplina, atual->faltas, atual->nota, atual->mencao);
+		if (atual->prox == NULL){
+			fprintf(arquivo,"%s;%d;%s;%s;%.2f;%.2f;%s", atual->nome, atual->matricula, atual->curso, atual->disciplina, atual->faltas, atual->nota, atual->mencao);
+		}
+		else{
+			fprintf(arquivo,"%s;%d;%s;%s;%.2f;%.2f;%s\n", atual->nome, atual->matricula, atual->curso, atual->disciplina, atual->faltas, atual->nota, atual->mencao);
+		}
 		atual = atual->prox;
 	}
+	printf("Alteracoes salvas com sucesso!\n");
+	fclose(arquivo);
+}
+
+void Gerenciar (lista* LISTA, listamat* LISTAMAT){
+	char sigla[4];
+	Materia* atualmat = LISTAMAT->inicio;
+	printf("Gerenciar disciplina: ");
+	scanf("%s", sigla);
+	while(atualmat != NULL){
+		if(strcmp(atualmat->disciplina, sigla) == 0){
+			break;
+		}
+		atualmat = atualmat->prox;
+	}	
+	if(atualmat == NULL){
+		printf("Disciplina nao encontrada!\n");
+		return;
+	}
+	Opcoes (LISTA, LISTAMAT, atualmat->nalunos, atualmat->disciplina);
 }
 
 void Opcoes (lista* LISTA, listamat* LISTAMAT, int nalunos, char disciplina[]){
 	int opcao;
+	int x;
 	while(1){
+		x = 0;
 		system("cls || clear");
 		printf("Gerenciar disciplina: %s", disciplina);
 		printf("\nQuantidade de alunos: %d", nalunos);
@@ -436,13 +481,21 @@ void Opcoes (lista* LISTA, listamat* LISTAMAT, int nalunos, char disciplina[]){
 		scanf("%d", &opcao);
 		switch(opcao){
 			case 1: listar_alunos(disciplina, LISTA); break;
-			case 2:	remover_aluno_da_disciplina(LISTAMAT, LISTA, disciplina); break;
+			case 2:
+				x = remover_aluno_da_disciplina(LISTAMAT, LISTA, disciplina); 
+				if (x == 1){
+					nalunos--;
+				}
+				break;
 			case 3:	atribuir_nota(disciplina, LISTA, LISTAMAT); break;
 			case 4:	atribuir_faltas(disciplina, LISTA, LISTAMAT); break;
 			case 5: //processar_turma(LISTA, LISTAMAT); break;
 			case 6:	return;
 			default: printf("\nComando invalido!\n");
 		}
+		printf("Pressione enter para voltar");
+		fflush(stdin);
+		getchar();
 	}
 }
 
@@ -458,7 +511,7 @@ void listar_alunos(char sigla[], lista* LISTA){
   	while (atual != NULL) {
 		Aluno* aux = LISTA->inicio;
 		Aluno* aux_ant = NULL;
-		while (aux->nota > atual->nota && aux != atual) {
+		while (aux->nota >= atual->nota && aux != atual) {
 		  aux_ant = aux;
 		  aux = aux->prox;
 		}
@@ -473,8 +526,8 @@ void listar_alunos(char sigla[], lista* LISTA){
 			}
 			atual->prox = aux;
 		}
-	anterior = atual;
-	atual = atual->prox;
+		anterior = atual;
+		atual = atual->prox;
 	}
 	
 	atual = LISTA->inicio;
@@ -488,30 +541,33 @@ void listar_alunos(char sigla[], lista* LISTA){
 				printf(" ");
 				espaco--;
 			}
-			if(atual->nota == 10){
-				printf("%.2f    %.2f   %s\n", atual->faltas, atual->nota, atual->mencao);
+			if(atual->faltas < 10){
+				printf("%.2f    ", atual->faltas);
 			}
 			else{
-				printf("%.2f    %.2f    %s\n", atual->faltas, atual->nota, atual->mencao);
+				printf("%.2f   ", atual->faltas);
+			}
+			if(atual->nota == 10){
+				printf("%.2f   %s\n", atual->nota, atual->mencao);
+			}
+			else{
+				printf("%.2f    %s\n", atual->nota, atual->mencao);
 			}
 		}
 		atual = atual->prox;
 	}
-	printf("Pressione enter para voltar");
-	fflush(stdin);
-	getchar();
 }
 
 void atribuir_nota(char sigla[], lista* LISTA, listamat* LISTAMAT){
-	int mat, cont;
+	int mat;
 	float Nota;
 	Aluno* atual = LISTA->inicio; 	
 	printf("Atribuir nota a aluno de %s\n", sigla);
 	printf("Matricula: ");
 	scanf("%d", &mat);
 	//Verifica matricula
-	for(cont = 1; cont<LISTA->tam; cont++){
-		if(mat==atual->matricula){
+	while(atual != NULL){
+		if(mat == atual->matricula && strcmp(atual->disciplina, sigla) == 0){
 			printf("Nota: ");
 			scanf("%f", &Nota);
 			atual->nota = Nota;
@@ -520,22 +576,19 @@ void atribuir_nota(char sigla[], lista* LISTA, listamat* LISTAMAT){
 		atual = atual->prox;
 	}
 	printf("Matricula nao encontrada\n");
-	printf("Pressione enter para voltar");
-	fflush(stdin);
-	getchar();
 return ;
 }
 
 void atribuir_faltas(char sigla[], lista* LISTA, listamat* LISTAMAT){
-	int mat, cont;
+	int mat;
 	float faltas;
 	Aluno* atual = LISTA->inicio; 	
 	printf("Atribuir faltas a aluno de %s\n", sigla);
 	printf("Matricula: ");
 	scanf("%d", &mat);
 	//Verifica matricula
-	for(cont = 1; cont<LISTA->tam; cont++){
-		if(mat==atual->matricula){
+	while(atual != NULL){
+		if(mat == atual->matricula && strcmp(atual->disciplina, sigla) == 0){
 			printf("Faltas(%%): ");
 			scanf("%f", &faltas);
 			atual->faltas = faltas;
@@ -544,19 +597,17 @@ void atribuir_faltas(char sigla[], lista* LISTA, listamat* LISTAMAT){
 		atual = atual->prox;
 	}
 	printf("Matricula nao encontrada\n");
-	printf("Pressione enter para voltar");
-	fflush(stdin);
-	getchar();
 return ;
 }
 
-void remover_aluno_da_disciplina(listamat* LISTAMAT, lista* LISTA, char sigla[]){
-	int mat, cont;
+int remover_aluno_da_disciplina(listamat* LISTAMAT, lista* LISTA, char sigla[]){
+	int mat;
 	Aluno *atual = LISTA->inicio;
+	Materia *atual2 = LISTAMAT->inicio;
 	printf("Digite a matricula do aluno a ser removido de %s: ", sigla);
 	scanf("%d", &mat);
-	for(cont = 1; cont<LISTA->tam; cont++){
-		if(mat==atual->matricula){
+	while (atual != NULL){
+		if(mat == atual->matricula && strcmp(atual->disciplina, sigla) == 0){
 			//Caso for a primeira matricula
 			if(atual->ant==NULL){
 				LISTA->inicio = LISTA->inicio->prox; 
@@ -577,14 +628,20 @@ void remover_aluno_da_disciplina(listamat* LISTAMAT, lista* LISTA, char sigla[])
 		atual = atual->prox;
 	}
 	if(atual != NULL){
+		while(atual2 != NULL){
+			if(strcmp(atual2->disciplina, sigla) == 0){
+				atual2->nalunos--;
+				break;
+			}
+			atual2 = atual2->prox;
+		}
 		free(atual);
+		return 1;
 	}
 	else{
 		printf("Matricula nao encontrada\n");
 	}
-	printf("Pressione enter para voltar");
-	fflush(stdin);
-	getchar();
+	return 0;
 }
 
 /*void processar_turma(lista* LISTA, listamat* LISTAMAT){
@@ -593,21 +650,3 @@ void remover_aluno_da_disciplina(listamat* LISTAMAT, lista* LISTA, char sigla[])
 
 	}
 }*/
-
-void Gerenciar (lista* LISTA, listamat* LISTAMAT){
-	char sigla[4];
-	Materia* atualmat = LISTAMAT->inicio;
-	printf("Gerenciar disciplina: ");
-	scanf("%s", sigla);
-	while(atualmat != NULL){
-		if(strcmp(atualmat->disciplina, sigla) == 0){
-			break;
-		}
-		atualmat = atualmat->prox;
-	}	
-	if(atualmat == NULL){
-		printf("Disciplina nao encontrada!\n");
-		return;
-	}
-	Opcoes (LISTA, LISTAMAT, atualmat->nalunos, atualmat->disciplina);
-}

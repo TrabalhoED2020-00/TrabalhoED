@@ -31,11 +31,29 @@ typedef struct ListaMat{
 	Materia *fim;
 }listamat;
 
+typedef struct curso{
+	char curso[3];
+	int nalunos;
+	int ss;
+	int ms;
+	int mm;
+	int mi;
+	int ii;
+	int sr;
+	struct curso *prox;
+	struct curso *ant;
+}Curso;
+
+typedef struct ListaCurso{
+	Curso *inicio;
+	Curso *fim;
+}listacurso;
+
 lista* CriarLista ();
 listamat* CriarListaMat ();
 void insereMaterias (listamat* LISTAMAT, char nome[], char disciplina[]);
 void insereFim (lista* LISTA, char nome[], int matricula, char curso[], char disciplina[], int faltas, int nota, char mencao[]);
-void dados (FILE* arquivo, lista* LISTA, listamat* LISTAMAT);
+void dados (FILE* arquivo, lista* LISTA, listamat* LISTAMAT, listacurso* LISTACURSO);
 void imprime(lista *lista);
 void ListarDisciplina(listamat* LISTAMAT);
 void AdicionarDisciplina (listamat* LISTAMAT);
@@ -45,26 +63,30 @@ void AdicionarAluno (lista* LISTA);
 void RemoverAluno (lista* LISTA);
 void IncluirAluno (lista* LISTA, listamat* LISTAMAT);
 void Salvar (FILE* arquivo, lista* LISTA);
-void Opcoes (lista* LISTA, listamat* LISTAMAT, int nalunos, char disciplina[]);
-void Gerenciar (lista* LISTA, listamat* LISTAMAT);
+void Opcoes (lista* LISTA, listamat* LISTAMAT, listacurso* LISTACURSO, int nalunos, char disciplina[]);
+void Gerenciar (lista* LISTA, listamat* LISTAMAT, listacurso* LISTACURSO);
 void listar_alunos(char disciplina[],lista* LISTA);
 void atribuir_nota(char sigla[], lista* LISTA, listamat* LISTAMAT);
 void atribuir_faltas(char sigla[], lista* LISTA, listamat* LISTAMAT);
 int remover_aluno_da_disciplina(listamat* LISTAMAT, lista* LISTA, char sigla[]);
 int semDisciplina(lista* LISTA);
+void processar_turma(lista* LISTA, listacurso* LISTACURSO, char sigla[]);
+listacurso* criarListaCurso();
+void insereCurso (listacurso* LISTACURSO, char nome[], char curso[]);
 
 int main(){
 	int opcao, cont;
 	FILE* arqNome;
 	lista* LISTA = CriarLista();
 	listamat* LISTAMAT = CriarListaMat();
+	listacurso* LISTACURSO = criarListaCurso();
 	if((arqNome = fopen("alunos.txt","rt")) == NULL){
 		printf("\nNao foi possivel abrir o arquivo.\n");
 		return 0;
 	}
-	dados(arqNome, LISTA, LISTAMAT);
-	cont = semDisciplina(LISTA);
+	dados(arqNome, LISTA, LISTAMAT, LISTACURSO);
 	while(1){
+		cont = semDisciplina(LISTA);
 		system("cls || clear");
 		printf("Ola professor,\n%d aluno(s) nao estao matriculados.\nO que deseja fazer:\n", cont);
 		printf("1 Listar disciplinas\n");
@@ -87,7 +109,7 @@ int main(){
 			case 5: AdicionarAluno(LISTA); break;
 			case 6: RemoverAluno(LISTA); break;
 			case 7: IncluirAluno(LISTA, LISTAMAT); break;
-			case 8: Gerenciar (LISTA, LISTAMAT);break;
+			case 8: Gerenciar (LISTA, LISTAMAT, LISTACURSO);break;
 			case 9: Salvar(arqNome, LISTA); break;
 			case 10: exit(0);
 			case 11: imprime(LISTA); break;
@@ -132,6 +154,57 @@ listamat* CriarListaMat(){
 	LISTAMAT->inicio = NULL;
 	LISTAMAT->fim = NULL;
 	return LISTAMAT;
+}
+
+listacurso* criarListaCurso(){
+	listacurso* l = (listacurso*)malloc(sizeof(listacurso));
+	if (l == NULL){
+		printf("\nSem memoria disponivel\n");
+		exit(0);
+	}
+	l->inicio = NULL;
+	l->fim = NULL;
+	return l;
+}
+
+void insereCurso (listacurso* LISTACURSO, char nome[], char curso[]){
+	int cont = 0;
+	Curso* novo = (Curso*)malloc(sizeof(Curso));
+	Curso* atual;
+	if(novo != NULL){
+		if(LISTACURSO != NULL){
+			atual = LISTACURSO->inicio;
+			while(atual != NULL){
+				if(strcmp(atual->curso, curso) == 0){
+					cont++;
+					atual->nalunos++;
+				}
+				atual = atual->prox;
+			}
+		}
+		if(cont == 0){
+			strcpy(novo->curso, curso);
+			if(nome != NULL){
+				novo->nalunos = 1;
+			}
+			else{
+				novo->nalunos = 0;
+			}
+			novo->prox = NULL;
+			novo->ant = LISTACURSO->fim;
+			if(LISTACURSO->fim != NULL){
+				LISTACURSO->fim->prox = novo;
+				LISTACURSO->fim = novo;
+			}
+			else{
+				LISTACURSO->inicio = novo;
+				LISTACURSO->fim = novo;
+			}
+		}
+		else{
+			free(novo);
+		}
+	}
 }
 
 void insereMaterias(listamat* LISTAMAT, char nome[], char disciplina[]){
@@ -199,7 +272,7 @@ void insereFim(lista* LISTA, char nome[], int matricula, char curso[], char disc
 	}
 }
 
-void dados(FILE* arquivo, lista* LISTA, listamat* LISTAMAT){
+void dados(FILE* arquivo, lista* LISTA, listamat* LISTAMAT, listacurso* LISTACURSO){
 	char nome[51], curso[3], disciplina[4], mencao[3];
 	int matricula; 
 	float faltas, nota;
@@ -208,6 +281,7 @@ void dados(FILE* arquivo, lista* LISTA, listamat* LISTAMAT){
 		fgetc (arquivo);
 		insereFim(LISTA, nome, matricula, curso, disciplina, faltas, nota, mencao);
 		insereMaterias(LISTAMAT, nome, disciplina);
+		insereCurso(LISTACURSO, nome, curso);
 	}
 	fclose(arquivo);
 }
@@ -445,7 +519,7 @@ void Salvar(FILE* arquivo, lista* LISTA){
 	fclose(arquivo);
 }
 
-void Gerenciar (lista* LISTA, listamat* LISTAMAT){
+void Gerenciar (lista* LISTA, listamat* LISTAMAT, listacurso* LISTACURSO){
 	char sigla[4];
 	Materia* atualmat = LISTAMAT->inicio;
 	printf("Gerenciar disciplina: ");
@@ -460,10 +534,10 @@ void Gerenciar (lista* LISTA, listamat* LISTAMAT){
 		printf("Disciplina nao encontrada!\n");
 		return;
 	}
-	Opcoes (LISTA, LISTAMAT, atualmat->nalunos, atualmat->disciplina);
+	Opcoes (LISTA, LISTAMAT, LISTACURSO, atualmat->nalunos, atualmat->disciplina);
 }
 
-void Opcoes (lista* LISTA, listamat* LISTAMAT, int nalunos, char disciplina[]){
+void Opcoes (lista* LISTA, listamat* LISTAMAT, listacurso* LISTACURSO, int nalunos, char disciplina[]){
 	int opcao;
 	int x;
 	while(1){
@@ -489,7 +563,7 @@ void Opcoes (lista* LISTA, listamat* LISTAMAT, int nalunos, char disciplina[]){
 				break;
 			case 3:	atribuir_nota(disciplina, LISTA, LISTAMAT); break;
 			case 4:	atribuir_faltas(disciplina, LISTA, LISTAMAT); break;
-			case 5: //processar_turma(LISTA, LISTAMAT); break;
+			case 5: processar_turma(LISTA, LISTACURSO, disciplina); break;
 			case 6:	return;
 			default: printf("\nComando invalido!\n");
 		}
@@ -571,6 +645,26 @@ void atribuir_nota(char sigla[], lista* LISTA, listamat* LISTAMAT){
 			printf("Nota: ");
 			scanf("%f", &Nota);
 			atual->nota = Nota;
+			if (atual->faltas <= 25 && atual->nota > 0){
+				if (Nota > 0 && Nota < 3){
+					strcpy(atual->mencao, "II");
+				}
+				if (Nota >= 3 && Nota < 5){
+					strcpy(atual->mencao, "MI");
+				}
+				if (Nota >= 5 && Nota < 7){
+					strcpy(atual->mencao, "MM");
+				}
+				if (Nota >= 7 && Nota < 9){
+					strcpy(atual->mencao, "MS");
+				}
+				if (Nota >= 9 && Nota <= 10){
+					strcpy(atual->mencao, "SS");
+				}
+			}
+			else{
+				strcpy(atual->mencao, "SR");
+			}
 			return;
 		}
 		atual = atual->prox;
@@ -592,6 +686,9 @@ void atribuir_faltas(char sigla[], lista* LISTA, listamat* LISTAMAT){
 			printf("Faltas(%%): ");
 			scanf("%f", &faltas);
 			atual->faltas = faltas;
+			if (atual->faltas > 25){
+				strcpy(atual->mencao, "SR");
+			}
 			return;
 		}
 		atual = atual->prox;
@@ -644,9 +741,88 @@ int remover_aluno_da_disciplina(listamat* LISTAMAT, lista* LISTA, char sigla[]){
 	return 0;
 }
 
-/*void processar_turma(lista* LISTA, listamat* LISTAMAT){
-	int i;
-	for(i=1; i<LISTAMAT->tam; i++){
-
+void processar_turma(lista* LISTA, listacurso* LISTACURSO, char sigla[]){
+	int aprovados, reprovados;
+	float p_aprovados, p_reprovados, nalunos;
+	Aluno* atualal;
+	Curso* atualcurso = LISTACURSO->inicio;
+	printf("\nCurso  Matriculados  Aprovados    Reprovados\n");
+	while (atualcurso != NULL){
+		atualcurso->ii = 0;
+		atualcurso->mi = 0;
+		atualcurso->mm = 0;
+		atualcurso->ms = 0;
+		atualcurso->ss = 0;
+		atualcurso->sr = 0;
+		nalunos = 0;
+		aprovados = 0;
+		reprovados = 0;
+		atualal = LISTA->inicio;
+		while(atualal != NULL){
+			if(strcmp(atualal->curso, atualcurso->curso) == 0){
+				if(strcmp(atualal->disciplina, sigla) == 0){
+					nalunos++;
+					if(atualal->nota >= 5){
+						aprovados++;
+					}
+					else{
+						reprovados++;
+					}	
+					if (strcmp(atualal->curso, atualcurso->curso) == 0){
+						if (atualal->faltas <= 25 && atualal->nota > 0){
+							if (atualal->nota > 0 && atualal->nota < 3){
+								atualcurso->ii++;
+							}
+							if (atualal->nota >= 3 && atualal->nota < 5){
+								atualcurso->mi++;
+							}
+							if (atualal->nota >= 5 && atualal->nota < 7){
+								atualcurso->mm++;
+							}
+							if (atualal->nota >= 7 && atualal->nota < 9){
+								atualcurso->ms++;
+							}
+							if (atualal->nota >= 9 && atualal->nota <= 10){
+								atualcurso->ss++;
+							}
+						}
+						else{
+							atualcurso->sr++;
+						}
+					}
+				}
+			}
+			atualal = atualal->prox;
+		}
+		//nalunos = atualcurso->nalunos;
+		if(nalunos > 0){
+			p_aprovados = (aprovados/nalunos)*100;
+			p_reprovados = (reprovados/nalunos)*100;
+			if(atualcurso->nalunos < 10){
+				printf("%s     %.0f             %.2f%%(%d)", atualcurso->curso, nalunos, p_aprovados, aprovados);
+			}
+			else{
+				printf("%s     %.0f            %.2f%%(%d)", atualcurso->curso, nalunos, p_aprovados, aprovados);
+			}
+			if(p_aprovados < 10){
+				printf("     %.2f%%(%d)\n", p_reprovados, reprovados);
+			}
+			else{
+				if(p_aprovados > 10 && p_aprovados < 100){
+					printf("    %.2f%%(%d)\n", p_reprovados, reprovados);
+				}
+				else{
+					printf("   %.2f%%(%d)\n", p_reprovados, reprovados);
+				}
+			}
+		}
+		atualcurso = atualcurso->prox;
 	}
-}*/
+	printf("\n\nMencao\n");
+	printf("Curso   SS  MS  MM  MI  II  SR\n");
+	atualcurso = LISTACURSO->inicio;
+	while(atualcurso != NULL){
+		printf("%s      %d   %d   %d   %d   %d   %d\n", atualcurso->curso, atualcurso->ss, atualcurso->ms, atualcurso->mm, atualcurso->mi, atualcurso->ii, atualcurso->sr);
+		atualcurso = atualcurso->prox;
+	}
+}

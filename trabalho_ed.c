@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 typedef struct aluno{
 	char nome[51];
 	int matricula;
@@ -29,7 +30,7 @@ typedef struct materia{
 typedef struct ListaMat{
 	Materia *inicio;
 	Materia *fim;
-}listamat;
+}listamat; 
 
 typedef struct curso{
 	char curso[3];
@@ -73,6 +74,7 @@ int semDisciplina(lista* LISTA);
 void processar_turma(lista* LISTA, listacurso* LISTACURSO, char sigla[]);
 listacurso* criarListaCurso();
 void insereCurso (listacurso* LISTACURSO, char nome[], char curso[]);
+void libera(listamat* LISTAMAT, lista* LISTA, listacurso* LISTACURSO);
 
 int main(){
 	int opcao, cont;
@@ -111,7 +113,7 @@ int main(){
 			case 7: IncluirAluno(LISTA, LISTAMAT); break;
 			case 8: Gerenciar (LISTA, LISTAMAT, LISTACURSO);break;
 			case 9: Salvar(arqNome, LISTA); break;
-			case 10: exit(0);
+			case 10: libera(LISTAMAT, LISTA, LISTACURSO); exit(0);
 			case 11: imprime(LISTA); break;
 			default: printf("\nComando invalido!\n");
 		}
@@ -640,7 +642,7 @@ void atribuir_nota(char sigla[], lista* LISTA, listamat* LISTAMAT){
 	printf("Atribuir nota a aluno de %s\n", sigla);
 	printf("Matricula: ");
 	scanf("%d", &mat);
-	//Verifica matricula
+
 	while(atual != NULL){
 		if(mat == atual->matricula && strcmp(atual->disciplina, sigla) == 0){
 			printf("Nota: ");
@@ -671,7 +673,6 @@ void atribuir_nota(char sigla[], lista* LISTA, listamat* LISTAMAT){
 		atual = atual->prox;
 	}
 	printf("Matricula nao encontrada\n");
-return ;
 }
 
 void atribuir_faltas(char sigla[], lista* LISTA, listamat* LISTAMAT){
@@ -681,7 +682,6 @@ void atribuir_faltas(char sigla[], lista* LISTA, listamat* LISTAMAT){
 	printf("Atribuir faltas a aluno de %s\n", sigla);
 	printf("Matricula: ");
 	scanf("%d", &mat);
-	//Verifica matricula
 	while(atual != NULL){
 		if(mat == atual->matricula && strcmp(atual->disciplina, sigla) == 0){
 			printf("Faltas(%%): ");
@@ -811,5 +811,30 @@ void processar_turma(lista* LISTA, listacurso* LISTACURSO, char sigla[]){
 	while(atualcurso != NULL){
 		printf("%s      %d   %d   %d   %d   %d   %d\n", atualcurso->curso, atualcurso->ss, atualcurso->ms, atualcurso->mm, atualcurso->mi, atualcurso->ii, atualcurso->sr);
 		atualcurso = atualcurso->prox;
+	}
+}
+
+void libera(listamat* LISTAMAT, lista* LISTA, listacurso* LISTACURSO){
+	Aluno* aluno_atual = LISTA->inicio;
+	Materia* mat_atual = LISTAMAT->inicio;
+	Curso* curso_atual = LISTACURSO->inicio;
+	Aluno* aluno_aux;
+	Materia * mat_aux;
+	Curso * curso_aux;
+
+	while(aluno_atual!= NULL){
+		aluno_aux = aluno_atual;
+		aluno_atual = aluno_atual->prox;
+		free(aluno_aux);
+	}
+	while(mat_atual!= NULL){
+		mat_aux = mat_atual;
+		mat_atual = mat_atual->prox;
+		free(mat_aux);
+	}
+	while(curso_atual!= NULL){
+		curso_aux = curso_atual;
+		curso_atual = curso_atual->prox;
+		free(curso_aux);
 	}
 }

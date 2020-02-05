@@ -1,7 +1,10 @@
+/** Nomes: Vitor Gladstone Alves Paravidine   15/0151659
+ *		   Marcos Gabriel Oliveira de Souza   17/0126307
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 
 typedef struct aluno{
 	char nome[51];
@@ -30,7 +33,7 @@ typedef struct materia{
 typedef struct ListaMat{
 	Materia *inicio;
 	Materia *fim;
-}listamat; 
+}listamat;
 
 typedef struct curso{
 	char curso[3];
@@ -77,7 +80,7 @@ void insereCurso (listacurso* LISTACURSO, char nome[], char curso[]);
 void libera(listamat* LISTAMAT, lista* LISTA, listacurso* LISTACURSO);
 
 int main(){
-	int opcao, cont;
+	int opcao, cont;			//"cont" recebe o numero de alunos sem disciplina 
 	FILE* arqNome;
 	lista* LISTA = CriarLista();
 	listamat* LISTAMAT = CriarListaMat();
@@ -114,7 +117,6 @@ int main(){
 			case 8: Gerenciar (LISTA, LISTAMAT, LISTACURSO);break;
 			case 9: Salvar(arqNome, LISTA); break;
 			case 10: libera(LISTAMAT, LISTA, LISTACURSO); exit(0);
-			case 11: imprime(LISTA); break;
 			default: printf("\nComando invalido!\n");
 		}
 		printf("Pressione enter para voltar");
@@ -274,6 +276,7 @@ void insereFim(lista* LISTA, char nome[], int matricula, char curso[], char disc
 	}
 }
 
+//Recebe os dados do arquivo
 void dados(FILE* arquivo, lista* LISTA, listamat* LISTAMAT, listacurso* LISTACURSO){
 	char nome[51], curso[3], disciplina[4], mencao[3];
 	int matricula; 
@@ -286,15 +289,6 @@ void dados(FILE* arquivo, lista* LISTA, listamat* LISTAMAT, listacurso* LISTACUR
 		insereCurso(LISTACURSO, nome, curso);
 	}
 	fclose(arquivo);
-}
-
-void imprime(lista *lista){
-	Aluno *noAux;
-	noAux = lista->inicio;
-	while(noAux != NULL){
-		printf("%s  %d  %s  %s  %.2f  %.2f  %s\n", noAux->nome, noAux->matricula, noAux->curso, noAux->disciplina, noAux->faltas, noAux->nota, noAux->mencao);
-		noAux = noAux->prox;
-	}
 }
 
 void ListarDisciplina(listamat* LISTAMAT){
@@ -389,7 +383,7 @@ void listar_alunos_sem_disciplina(lista* LISTA){
 	while(atual != NULL){
 		if(strcmp(atual->disciplina,"N/D") == 0){
 			len = strlen(atual->nome);
-			espaco = 51 - len;
+			espaco = 51 - len;		//51 = 50(tamanho maximo do nome) + 1
 			printf("%s", atual->nome);
 			while (espaco){
 				printf(" ");
@@ -417,41 +411,41 @@ void AdicionarAluno (lista* LISTA, listacurso* LISTACURSO){
 }
 
 void RemoverAluno (lista* LISTA){
-	int matricula, cont = 0, existe = 0;
+	int matricula, existe = 0 , libera;    //"existe" ajuda a verificar se a matricula existe
 	Aluno *atual = LISTA->inicio;
+	Aluno *aux;
 	printf("\nRemover aluno\nMatricula: ");
 	scanf("%d", &matricula);
 	while(atual != NULL){
 		if(matricula == atual->matricula){
 			existe++;
-			if(strcmp(atual->disciplina, "N/D") != 0){
-				cont++;
-				break;
-			}
 		}
 		atual = atual->prox;
 	}
-	if(cont == 0){
-		atual = LISTA->inicio;
-		while(atual != NULL){
-			if(matricula == atual->matricula){
-				if(atual == LISTA->inicio){
-					LISTA->inicio = LISTA->inicio->prox;
-					LISTA->inicio->ant = NULL;
+	atual = LISTA->inicio;
+	while(atual != NULL){
+		libera = 0;
+		if(matricula == atual->matricula && strcmp(atual->disciplina, "N/D") == 0){
+			if(atual == LISTA->inicio){
+				LISTA->inicio = LISTA->inicio->prox;
+				LISTA->inicio->ant = NULL;
+			}
+			else{
+				if(atual == LISTA->fim){
+					LISTA->fim = LISTA->fim->ant;
+					LISTA->fim->prox = NULL;
 				}
 				else{
-					if(atual == LISTA->fim){
-						LISTA->fim = LISTA->fim->ant;
-						LISTA->fim->prox = NULL;
-					}
-					else{
-						atual->ant->prox = atual->prox;
-						atual->prox->ant = atual->ant;
-					}
+					atual->ant->prox = atual->prox;
+					atual->prox->ant = atual->ant;
 				}
-				free(atual);
 			}
-			atual = atual->prox;
+			libera++;
+		}
+		aux = atual;
+		atual = atual->prox;
+		if(libera > 0){
+			free(aux);
 		}
 	}
 	if (existe == 0){
@@ -460,6 +454,7 @@ void RemoverAluno (lista* LISTA){
 }
 
 void IncluirAluno(lista* LISTA, listamat* LISTAMAT){
+	//Mesmo que o aluno ja exista, eh preciso da opcao "Adicionar aluno" para criar um novo espaco na lista antes de utilizar esta funcao
 	int matricula, existemat = 0, existeal = 0;
 	char disciplina[4];
 	Materia* atualmat = LISTAMAT->inicio;
@@ -483,14 +478,17 @@ void IncluirAluno(lista* LISTA, listamat* LISTAMAT){
 		atualal = atualal->prox;
 	}
 	if (existemat != 0 && existeal != 0){
-		atualmat->nalunos++;
 		atualal = LISTA->inicio;
 		while (atualal != NULL){
 			if (atualal->matricula == matricula && strcmp(atualal->disciplina, "N/D") == 0){
+				atualmat->nalunos++;
 				strcpy(atualal->disciplina, disciplina);
 				break;
 			}
 			atualal = atualal->prox;
+			if(atualal == NULL){
+				printf("Aluno e disciplina existem, mas utilize a funcao (Adicionar aluno) antes para criar um novo espaco na lista!\n");
+			}
 		}
 	}
 	else{
@@ -540,9 +538,10 @@ void Gerenciar (lista* LISTA, listamat* LISTAMAT, listacurso* LISTACURSO){
 	Opcoes (LISTA, LISTAMAT, LISTACURSO, atualmat->nalunos, atualmat->disciplina);
 }
 
+//opcoes de gerenciamento
 void Opcoes (lista* LISTA, listamat* LISTAMAT, listacurso* LISTACURSO, int nalunos, char disciplina[]){
 	int opcao;
-	int x;
+	int x;    //ajuda a verificar se o aluno foi removido
 	while(1){
 		x = 0;
 		system("cls || clear");
@@ -584,7 +583,8 @@ void listar_alunos(char sigla[], lista* LISTA){
 	}
 	Aluno* anterior = NULL;
 	Aluno* atual = LISTA->inicio->prox; 
-  
+
+	//InsetionSort
   	while (atual != NULL) {
 		Aluno* aux = LISTA->inicio;
 		Aluno* aux_ant = NULL;
@@ -612,7 +612,7 @@ void listar_alunos(char sigla[], lista* LISTA){
 	while(atual != NULL){
 		if(strcmp(atual->disciplina, sigla) == 0){
 			len = strlen(atual->nome);
-			espaco = 51 - len;
+			espaco = 51 - len;		//51 = 50(tamanho maximo do nome) + 1
 			printf("%d    %s", atual->matricula, atual->nome);
 			while (espaco){
 				printf(" ");
@@ -642,7 +642,6 @@ void atribuir_nota(char sigla[], lista* LISTA, listamat* LISTAMAT){
 	printf("Atribuir nota a aluno de %s\n", sigla);
 	printf("Matricula: ");
 	scanf("%d", &mat);
-
 	while(atual != NULL){
 		if(mat == atual->matricula && strcmp(atual->disciplina, sigla) == 0){
 			printf("Nota: ");
@@ -822,17 +821,17 @@ void libera(listamat* LISTAMAT, lista* LISTA, listacurso* LISTACURSO){
 	Materia * mat_aux;
 	Curso * curso_aux;
 
-	while(aluno_atual!= NULL){
+	while(aluno_atual != NULL){
 		aluno_aux = aluno_atual;
 		aluno_atual = aluno_atual->prox;
 		free(aluno_aux);
 	}
-	while(mat_atual!= NULL){
+	while(mat_atual != NULL){
 		mat_aux = mat_atual;
 		mat_atual = mat_atual->prox;
 		free(mat_aux);
 	}
-	while(curso_atual!= NULL){
+	while(curso_atual != NULL){
 		curso_aux = curso_atual;
 		curso_atual = curso_atual->prox;
 		free(curso_aux);
